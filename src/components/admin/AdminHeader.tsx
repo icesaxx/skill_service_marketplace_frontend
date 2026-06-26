@@ -8,6 +8,19 @@ import {
   Sun,
 } from '@phosphor-icons/react';
 import NotificationPanel from '@/features/Admin/components/NotificationPanel';
+import { useApiQuery } from '@/services/useApiQuery';
+
+interface NotificationItem {
+  id: string;
+  read_at?: string | null;
+}
+
+type NotificationsResponse =
+  | NotificationItem[]
+  | {
+      notification?: NotificationItem[];
+      data?: NotificationItem[];
+    };
 
 interface AdminHeaderProps {
   sidebarCollapsed: boolean;
@@ -22,6 +35,15 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ sidebarCollapsed, onToggleSid
   const [searchFocused, setSearchFocused] = React.useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifTriggerRef = useRef<HTMLButtonElement>(null);
+  const { data: notificationsData } = useApiQuery<unknown, NotificationsResponse>({
+    endpoint: '/notifications',
+    queryKey: ['notifications'],
+    raw: true,
+  });
+  const notifications = Array.isArray(notificationsData)
+    ? notificationsData
+    : notificationsData?.notification ?? notificationsData?.data ?? [];
+  const unreadCount = notifications.filter((notification) => !notification.read_at).length;
 
   const toggleDarkMode = () => {
     document.documentElement.classList.toggle('dark');
@@ -157,7 +179,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ sidebarCollapsed, onToggleSid
               title="Notifications"
             >
               <Bell size={18} weight="duotone" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive animate-pulse" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive animate-pulse" />
+              )}
             </button>
             <NotificationPanel
               open={notifOpen}

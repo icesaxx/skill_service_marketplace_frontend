@@ -12,19 +12,20 @@ export interface QueryPayload<T = unknown> {
   params?: T;
   queryKey?: QueryKey;
   enabled?: boolean;
+  raw?: boolean;
 }
 
 export function useApiQuery<TParams = unknown, TRes = unknown>(
-  { endpoint, params, queryKey, enabled }: QueryPayload<TParams>,
-  options?: UseQueryOptions<TRes, Error>
+  { endpoint, params, queryKey, enabled, raw }: QueryPayload<TParams>,
+  options?: Omit<UseQueryOptions<TRes, Error>, "queryKey" | "queryFn">
 ) {
   return useQuery<TRes, Error>({
     queryKey: queryKey ?? [endpoint, params],
     queryFn: async () => {
-      const res = await api.get<Response<TRes>>(endpoint, {
+      const res = await api.get<Response<TRes> | TRes>(endpoint, {
         params,
       });
-      return res.data.data;
+      return raw ? (res.data as TRes) : (res.data as Response<TRes>).data;
     },
     enabled,
     ...options,

@@ -129,7 +129,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed }) => {
         </div>
         {!collapsed && (
           <div className="overflow-hidden transition-opacity duration-200">
-            <h1 className="text-sm font-bold tracking-tight truncate">SSM</h1>
+            <h1 className="text-sm font-bold tracking-tight truncate">SSM Admin</h1>
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import {
     Prohibit,
     ArrowUpRight,
 } from "@phosphor-icons/react"
+import { dashboardAccent } from "@/lib/colorStyles"
 
 interface DashboardStats {
     users: {
@@ -94,7 +95,7 @@ const DashboardPage = () => {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                     {/* Users Card */}
-                    <div className="group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 hover:shadow-lg hover:border-blue-200 dark:hover:border-blue-800/50 transition-all duration-300">
+                    <div className={`group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 hover:shadow-lg ${dashboardAccent.admin.borderHover} transition-all duration-300`}>
                         <div className="flex items-start justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -104,7 +105,7 @@ const DashboardPage = () => {
                                     {stats?.users.total ?? 0}
                                 </p>
                             </div>
-                            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-300">
+                            <div className={`p-3 rounded-xl ${dashboardAccent.admin.bg} ${dashboardAccent.admin.text} group-hover:scale-110 transition-transform duration-300`}>
                                 <Users className="w-6 h-6" weight="duotone" />
                             </div>
                         </div>
@@ -121,7 +122,7 @@ const DashboardPage = () => {
                     </div>
 
                     {/* Categories Card */}
-                    <div className="group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 hover:shadow-lg hover:border-purple-200 dark:hover:border-purple-800/50 transition-all duration-300">
+                    <div className={`group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 hover:shadow-lg ${dashboardAccent.admin.borderHover} transition-all duration-300`}>
                         <div className="flex items-start justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -131,7 +132,7 @@ const DashboardPage = () => {
                                     {stats?.categories.total ?? 0}
                                 </p>
                             </div>
-                            <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform duration-300">
+                            <div className={`p-3 rounded-xl ${dashboardAccent.admin.bg} ${dashboardAccent.admin.text} group-hover:scale-110 transition-transform duration-300`}>
                                 <BookOpen className="w-6 h-6" weight="duotone" />
                             </div>
                         </div>
@@ -142,7 +143,7 @@ const DashboardPage = () => {
                     </div>
 
                     {/* Services Card */}
-                    <div className="group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 hover:shadow-lg hover:border-amber-200 dark:hover:border-amber-800/50 transition-all duration-300">
+                    <div className={`group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 hover:shadow-lg ${dashboardAccent.admin.borderHover} transition-all duration-300`}>
                         <div className="flex items-start justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -152,7 +153,7 @@ const DashboardPage = () => {
                                     {stats?.services.total ?? 0}
                                 </p>
                             </div>
-                            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform duration-300">
+                            <div className={`p-3 rounded-xl ${dashboardAccent.admin.bg} ${dashboardAccent.admin.text} group-hover:scale-110 transition-transform duration-300`}>
                                 <Wrench className="w-6 h-6" weight="duotone" />
                             </div>
                         </div>
@@ -163,7 +164,7 @@ const DashboardPage = () => {
                     </div>
 
                     {/* Bookings Card */}
-                    <div className="group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 hover:shadow-lg hover:border-rose-200 dark:hover:border-rose-800/50 transition-all duration-300">
+                    <div className={`group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 hover:shadow-lg ${dashboardAccent.admin.borderHover} transition-all duration-300`}>
                         <div className="flex items-start justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -173,7 +174,7 @@ const DashboardPage = () => {
                                     {stats?.bookings.total ?? 0}
                                 </p>
                             </div>
-                            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform duration-300">
+                            <div className={`p-3 rounded-xl ${dashboardAccent.admin.bg} ${dashboardAccent.admin.text} group-hover:scale-110 transition-transform duration-300`}>
                                 <CalendarCheck className="w-6 h-6" weight="duotone" />
                             </div>
                         </div>

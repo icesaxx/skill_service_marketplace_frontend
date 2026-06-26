@@ -1,5 +1,8 @@
 import { useRef, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { useQueryClient } from "@tanstack/react-query"
 import { useApiQuery } from "@/services/useApiQuery"
+import api from "@/provider/axios"
 import {
     Bell,
     X,
@@ -12,7 +15,15 @@ interface NotificationItem {
     id: string
     message: string
     time: string
+    read_at?: string | null
 }
+
+type NotificationsResponse =
+    | NotificationItem[]
+    | {
+        notification?: NotificationItem[]
+        data?: NotificationItem[]
+    }
 
 interface NotificationPanelProps {
     open: boolean
@@ -22,14 +33,44 @@ interface NotificationPanelProps {
 
 const NotificationPanel = ({ open, onClose, triggerRef }: NotificationPanelProps) => {
     const panelRef = useRef<HTMLDivElement>(null)
+    const navigate = useNavigate()
+    const queryClient = useQueryClient()
 
-    const { data, isLoading, isError } = useApiQuery({
+    const { data, isLoading, isError } = useApiQuery<unknown, NotificationsResponse>({
         endpoint: "/notifications",
         queryKey: ["notifications"],
         enabled: open,
+        raw: true,
     })
 
-    const notifications = (data as NotificationItem[]) ?? []
+    const notifications = Array.isArray(data) ? data : data?.notification ?? data?.data ?? []
+    const unreadCount = notifications.filter((notification) => !notification.read_at).length
+
+    const markNotificationsAsRead = async () => {
+        await api.post("/notifications/mark-as-read")
+        queryClient.setQueryData<NotificationsResponse>(["notifications"], (current) => {
+            const readAt = new Date().toISOString()
+            if (Array.isArray(current)) {
+                return current.map((notification) => ({ ...notification, read_at: readAt }))
+            }
+            if (!current) return current
+            return {
+                ...current,
+                notification: current.notification?.map((notification) => ({ ...notification, read_at: readAt })),
+                data: current.data?.map((notification) => ({ ...notification, read_at: readAt })),
+            }
+        })
+        queryClient.invalidateQueries({ queryKey: ["notifications"] })
+    }
+
+    const handleNotificationClick = async () => {
+        try {
+            await markNotificationsAsRead()
+        } finally {
+            onClose()
+            navigate("/admin/seller-application")
+        }
+    }
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -92,14 +133,16 @@ const NotificationPanel = ({ open, onClose, triggerRef }: NotificationPanelProps
                     <div className="flex items-center gap-2.5">
                         <div className="relative">
                             <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" weight="duotone" />
-                            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                            {unreadCount > 0 && (
+                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                            )}
                         </div>
                         <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
                             Notifications
                         </h2>
-                        {notifications.length > 0 && (
+                        {unreadCount > 0 && (
                             <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full">
-                                {notifications.length}
+                                {unreadCount}
                             </span>
                         )}
                     </div>
@@ -145,49 +188,56 @@ const NotificationPanel = ({ open, onClose, triggerRef }: NotificationPanelProps
 
                     {!isLoading && !isError && notifications.length > 0 && (
                         <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
-                            {notifications.map((notif, index) => (
-                                <div
-                                    key={notif.id}
-                                    className={`
-                                        flex items-start gap-3 px-5 py-4
-                                        hover:bg-gray-50 dark:hover:bg-gray-800/30
-                                        transition-colors duration-150 cursor-pointer
-                                        ${index < 3 ? 'bg-blue-50/30 dark:bg-blue-900/5' : ''}
-                                    `}
-                                >
-                                    <div className={`
-                                        flex items-center justify-center w-8 h-8 rounded-full shrink-0 mt-0.5
-                                        ${index < 3
-                                            ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
-                                        }
-                                    `}>
-                                        {index < 3 ? (
-                                            <SealCheck className="w-4 h-4" weight="fill" />
-                                        ) : (
-                                            <Bell className="w-4 h-4" weight="duotone" />
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className={`
-                                            text-sm leading-relaxed
-                                            ${index < 3
-                                                ? 'font-semibold text-gray-900 dark:text-gray-100'
-                                                : 'text-gray-700 dark:text-gray-300'
+                            {notifications.map((notif) => {
+                                const isUnread = !notif.read_at
+
+                                return (
+                                    <button
+                                        type="button"
+                                        key={notif.id}
+                                        onClick={handleNotificationClick}
+                                        className={`
+                                            flex w-full items-start gap-3 px-5 py-4 text-left
+                                            hover:bg-gray-50 dark:hover:bg-gray-800/30
+                                            transition-colors duration-150
+                                            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40
+                                            ${isUnread ? 'bg-blue-50/30 dark:bg-blue-900/5' : ''}
+                                        `}
+                                    >
+                                        <div className={`
+                                            flex items-center justify-center w-8 h-8 rounded-full shrink-0 mt-0.5
+                                            ${isUnread
+                                                ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                                                : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
                                             }
                                         `}>
-                                            {notif.message}
-                                        </p>
-                                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5 flex items-center gap-1">
-                                            <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
-                                            {notif.time}
-                                        </p>
-                                    </div>
-                                    {index < 3 && (
-                                        <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-2" />
-                                    )}
-                                </div>
-                            ))}
+                                            {isUnread ? (
+                                                <SealCheck className="w-4 h-4" weight="fill" />
+                                            ) : (
+                                                <Bell className="w-4 h-4" weight="duotone" />
+                                            )}
+                                        </div>
+                                      <div className="flex-1 min-w-0">
+                                            <p className={`
+                                                text-sm leading-relaxed
+                                                ${isUnread
+                                                    ? 'font-semibold text-gray-900 dark:text-gray-100'
+                                                    : 'text-gray-700 dark:text-gray-300'
+                                                }
+                                            `}>
+                                                {notif.message}
+                                            </p>
+                                            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1.5 flex items-center gap-1">
+                                                <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                                                {notif.time}
+                                            </p>
+                                        </div>
+                                        {isUnread && (
+                                            <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-2" />
+                                        )}
+                                    </button>
+                                )
+                            })}
                         </div>
                     )}
                 </div>
@@ -195,7 +245,11 @@ const NotificationPanel = ({ open, onClose, triggerRef }: NotificationPanelProps
                 {/* Footer */}
                 {!isLoading && !isError && notifications.length > 0 && (
                     <div className="shrink-0 border-t border-gray-100 dark:border-gray-700/50 px-5 py-3">
-                        <button className="w-full text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-150 text-center">
+                        <button
+                            type="button"
+                            onClick={handleNotificationClick}
+                            className="w-full text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-150 text-center"
+                        >
                             View all notifications
                         </button>
                     </div>

@@ -55,7 +55,7 @@ const RegisterForm = () => {
         <AuthTextField
           id="register-name"
           label="Name"
-          placeholder="Zin Min Latt"
+          placeholder="John"
           autoComplete="name"
           error={errors.name?.message}
           {...register("name")}

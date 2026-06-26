@@ -39,7 +39,7 @@ type SellerRequest = {
 }
 
 const getStatusVariant = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
         case "active":
             return "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
         case "pending":
@@ -49,15 +49,6 @@ const getStatusVariant = (status: string) => {
         default:
             return "bg-gray-500/10 text-gray-600 dark:bg-gray-400/10 dark:text-gray-400 border-gray-200 dark:border-gray-700"
     }
-}
-
-const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-    })
 }
 
 const SellerApplicationPage = () => {
@@ -70,6 +61,8 @@ const SellerApplicationPage = () => {
     const [searchQuery, setSearchQuery] = useState("")
     const [viewUserId, setViewUserId] = useState<number | null>(null)
     const [viewModalOpen, setViewModalOpen] = useState(false)
+    const [rejectUserId, setRejectUserId] = useState<number | null>(null)
+    const [rejectMessage, setRejectMessage] = useState("")
 
     const approveMutation = useApiMutation({
         onSuccess: () => {
@@ -89,6 +82,8 @@ const SellerApplicationPage = () => {
             queryClient.invalidateQueries({ queryKey: ["seller-request"] })
             setViewModalOpen(false)
             setViewUserId(null)
+            setRejectUserId(null)
+            setRejectMessage("")
         },
         onError: () => {
             toast.error("Failed to reject seller")
@@ -104,10 +99,33 @@ const SellerApplicationPage = () => {
     }
 
     const handleReject = (userId: number) => {
+        setRejectUserId(userId)
+        setRejectMessage("")
+    }
+
+    const handleCloseRejectModal = () => {
+        if (rejectMutation.isPending) return
+        setRejectUserId(null)
+        setRejectMessage("")
+    }
+
+    const handleSubmitReject = () => {
+        const message = rejectMessage.trim()
+
+        if (!rejectUserId) return
+
+        if (!message) {
+            toast.error("Please enter a rejection reason")
+            return
+        }
+
         rejectMutation.mutate({
             endpoint: "/admin/reject-seller",
             method: "PUT",
-            body: { user_id: userId },
+            body: {
+                user_id: rejectUserId,
+                message,
+            },
         })
     }
 
@@ -118,11 +136,11 @@ const SellerApplicationPage = () => {
 
     const filteredRequests = useMemo(() => {
         if (!searchQuery.trim()) return requests
-        const query = searchQuery.toLowerCase()
+        const query = searchQuery?.toLowerCase()
         return requests.filter(
             (r) =>
-                r.name.toLowerCase().includes(query) ||
-                r.email.toLowerCase().includes(query) ||
+                r.name?.toLowerCase().includes(query) ||
+                r.email?.toLowerCase().includes(query) ||
                 r.company_name?.toLowerCase().includes(query),
         )
     }, [requests, searchQuery])
@@ -244,9 +262,9 @@ const SellerApplicationPage = () => {
                                                     getStatusVariant(req.status),
                                                 )}
                                             >
-                                                {req.status.toLowerCase() === "active" && <CheckCircle className="size-3" weight="fill" />}
-                                                {req.status.toLowerCase() === "pending" && <Clock className="size-3" weight="bold" />}
-                                                {req.status.toLowerCase() === "rejected" && <XCircle className="size-3" weight="fill" />}
+                                                {req.status?.toLowerCase() === "active" && <CheckCircle className="size-3" weight="fill" />}
+                                                {req.status?.toLowerCase() === "pending" && <Clock className="size-3" weight="bold" />}
+                                                {req.status?.toLowerCase() === "rejected" && <XCircle className="size-3" weight="fill" />}
                                                 {req.status}
                                             </span>
                                         </td>
@@ -254,16 +272,16 @@ const SellerApplicationPage = () => {
                                             <span
                                                 className={cn(
                                                     "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize",
-                                                    req.approval_status.toLowerCase() === "approved"
+                                                    req.approval_status?.toLowerCase() === "approved"
                                                         ? "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-400/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
-                                                        : req.approval_status.toLowerCase() === "rejected"
+                                                        : req.approval_status?.toLowerCase() === "rejected"
                                                             ? "bg-rose-500/10 text-rose-600 dark:bg-rose-400/10 dark:text-rose-400 border-rose-200 dark:border-rose-800"
                                                             : "bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400 border-amber-200 dark:border-amber-800",
                                                 )}
                                             >
-                                                {req.approval_status.toLowerCase() === "approved" && <CheckCircle className="size-3" weight="fill" />}
-                                                {req.approval_status.toLowerCase() === "rejected" && <XCircle className="size-3" weight="fill" />}
-                                                {req.approval_status.toLowerCase() === "pending" && <Clock className="size-3" weight="bold" />}
+                                                {req.approval_status?.toLowerCase() === "approved" && <CheckCircle className="size-3" weight="fill" />}
+                                                {req.approval_status?.toLowerCase() === "rejected" && <XCircle className="size-3" weight="fill" />}
+                                                {req.approval_status?.toLowerCase() === "pending" && <Clock className="size-3" weight="bold" />}
                                                 {req.approval_status}
                                             </span>
                                         </td>
@@ -346,6 +364,65 @@ const SellerApplicationPage = () => {
                 isApproving={approveMutation.isPending}
                 isRejecting={rejectMutation.isPending}
             />
+
+            {rejectUserId !== null && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
+                    <button
+                        type="button"
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        onClick={handleCloseRejectModal}
+                        aria-label="Close rejection reason dialog"
+                    />
+                    <div className="relative z-10 w-full max-w-md rounded-xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-gray-900">
+                        <div className="flex items-start gap-3">
+                            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                                <Prohibit className="size-5" weight="bold" />
+                            </div>
+                            <div>
+                                <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Reject seller request</h2>
+                                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    Add a clear reason so the buyer knows what to fix.
+                                </p>
+                            </div>
+                        </div>
+
+                        <label className="mt-5 block space-y-2">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Reason</span>
+                            <textarea
+                                value={rejectMessage}
+                                onChange={(event) => setRejectMessage(event.target.value)}
+                                className="min-h-28 w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition-colors placeholder:text-gray-400 focus:border-rose-500 focus:ring-1 focus:ring-rose-500/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+                                placeholder="Your information is incomplete"
+                                autoFocus
+                            />
+                        </label>
+
+                        <div className="mt-5 flex items-center justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={handleCloseRejectModal}
+                                disabled={rejectMutation.isPending}
+                                className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleSubmitReject}
+                                disabled={rejectMutation.isPending}
+                                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-4 text-sm font-medium text-white transition-colors hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {rejectMutation.isPending ? (
+                                    <CircleNotch className="size-4 animate-spin" weight="bold" />
+                                ) : (
+                                    <Prohibit className="size-4" weight="bold" />
+                                )}
+                                {rejectMutation.isPending ? "Rejecting..." : "Reject"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

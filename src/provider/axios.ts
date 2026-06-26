@@ -20,6 +20,9 @@ api.interceptors.request.use(
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
             }
+            if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+                delete config.headers["Content-Type"];
+            }
         } catch {
             toast.error("Error encrypting API key");
         }

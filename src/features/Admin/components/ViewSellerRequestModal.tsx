@@ -101,8 +101,6 @@ const ViewSellerRequestModal = ({ userId, open, onClose, onApprove, onReject, is
 
     if (!open) return null
 
-    const baseURL = (import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "").replace(/\/+$/, "")
-
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             {/* Backdrop */}
