@@ -2,7 +2,7 @@ import Cookies from "js-cookie"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ArrowRight, LockKey, SignIn } from "@phosphor-icons/react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -129,9 +129,9 @@ const LoginForm = () => {
           <input className="size-3.5 border border-input accent-foreground" type="checkbox" />
           Remember me
         </label>
-        <button className="font-medium text-foreground underline-offset-4 hover:underline" type="button">
+        <Link className="font-medium text-foreground underline-offset-4 hover:underline" to="/forgot-password">
           Forgot password?
-        </button>
+        </Link>
       </div>
 
       <Button

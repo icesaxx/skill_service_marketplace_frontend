@@ -17,5 +17,23 @@ export const registerSchema = z
     path: ["password_confirmation"],
   })
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().min(1, "Email is required").email("Enter a valid email"),
+})
+
+export const resetPasswordSchema = z
+  .object({
+    email: z.string().trim().min(1, "Email is required").email("Enter a valid email"),
+    token: z.string().trim().min(1, "Reset token is required"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    password_confirmation: z.string().min(1, "Confirm your password"),
+  })
+  .refine((data) => data.password === data.password_confirmation, {
+    message: "Passwords do not match",
+    path: ["password_confirmation"],
+  })
+
 export type LoginFormValues = z.infer<typeof loginSchema>
 export type RegisterFormValues = z.infer<typeof registerSchema>
+export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>

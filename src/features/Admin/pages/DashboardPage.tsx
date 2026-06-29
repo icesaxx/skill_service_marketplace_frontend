@@ -14,8 +14,9 @@ import { dashboardAccent } from "@/lib/colorStyles"
 interface DashboardStats {
     users: {
         total: number
-        banned: number
         active: number
+        inactive: number
+        suspended: number
     }
     categories: { 
         total: number
@@ -26,9 +27,13 @@ interface DashboardStats {
     bookings: {
         total: number
         pending: number
+        in_progress: number
         completed: number
     }
 }
+
+const cardClass = `group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-5 sm:p-6 hover:shadow-lg ${dashboardAccent.admin.borderHover} transition-all duration-300`
+const statusPillClass = "inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1 text-xs font-medium dark:bg-gray-900/30"
 
 const StatCardSkeleton = () => (
     <div className="bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 animate-pulse">
@@ -46,12 +51,62 @@ const StatCardSkeleton = () => (
 )
 
 const DashboardPage = () => {
-    const { data, isLoading, isError } = useApiQuery({
+    const { data, isLoading, isError } = useApiQuery<never, DashboardStats>({
         endpoint: "/admin/dashboard-stats",
         queryKey: ["dashboard-stats"],
     })
 
-    const stats = data as DashboardStats | undefined
+    const stats = data
+    const getPercentage = (value = 0, total = 0) => (total ? `${(value / total) * 100}%` : "0%")
+    const userBreakdown = [
+        {
+            label: "Active",
+            value: stats?.users.active ?? 0,
+            color: "text-emerald-600 dark:text-emerald-400",
+            bar: "bg-emerald-500",
+            icon: CheckCircle,
+        },
+        {
+            label: "Inactive",
+            value: stats?.users.inactive ?? 0,
+            color: "text-amber-600 dark:text-amber-400",
+            bar: "bg-amber-500",
+            icon: Clock,
+        },
+        {
+            label: "Suspended",
+            value: stats?.users.suspended ?? 0,
+            color: "text-red-500 dark:text-red-400",
+            bar: "bg-red-500",
+            icon: Prohibit,
+        },
+    ]
+    const bookingBreakdown = [
+        {
+            label: "Completed",
+            shortLabel: "Done",
+            value: stats?.bookings.completed ?? 0,
+            color: "text-emerald-600 dark:text-emerald-400",
+            bar: "bg-emerald-500",
+            icon: CheckCircle,
+        },
+        {
+            label: "In Progress",
+            shortLabel: "Progress",
+            value: stats?.bookings.in_progress ?? 0,
+            color: "text-blue-600 dark:text-blue-400",
+            bar: "bg-blue-500",
+            icon: Clock,
+        },
+        {
+            label: "Pending",
+            shortLabel: "Pending",
+            value: stats?.bookings.pending ?? 0,
+            color: "text-amber-600 dark:text-amber-400",
+            bar: "bg-amber-500",
+            icon: Clock,
+        },
+    ]
 
     if (isError) {
         return (
@@ -87,15 +142,15 @@ const DashboardPage = () => {
 
             {/* Stats Grid */}
             {isLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
                     {Array.from({ length: 4 }).map((_, i) => (
                         <StatCardSkeleton key={i} />
                     ))}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
                     {/* Users Card */}
-                    <div className={`group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 hover:shadow-lg ${dashboardAccent.admin.borderHover} transition-all duration-300`}>
+                    <div className={cardClass}>
                         <div className="flex items-start justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -109,20 +164,22 @@ const DashboardPage = () => {
                                 <Users className="w-6 h-6" weight="duotone" />
                             </div>
                         </div>
-                        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700/50 flex items-center gap-4 text-xs">
-                            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                                <CheckCircle className="w-3.5 h-3.5" weight="fill" />
-                                {stats?.users.active ?? 0} Active
-                            </span>
-                            <span className="flex items-center gap-1.5 text-red-500 dark:text-red-400">
-                                <Prohibit className="w-3.5 h-3.5" weight="fill" />
-                                {stats?.users.banned ?? 0} Banned
-                            </span>
+                        <div className="mt-5 flex flex-wrap gap-2 border-t border-gray-100 pt-4 dark:border-gray-700/50">
+                            {userBreakdown.map((item) => {
+                                const Icon = item.icon
+                                return (
+                                    <span key={item.label} className={`${statusPillClass} ${item.color}`}>
+                                        <Icon className="size-3.5 shrink-0" weight="fill" />
+                                        <span>{item.value}</span>
+                                        <span>{item.label}</span>
+                                    </span>
+                                )
+                            })}
                         </div>
                     </div>
 
                     {/* Categories Card */}
-                    <div className={`group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 hover:shadow-lg ${dashboardAccent.admin.borderHover} transition-all duration-300`}>
+                    <div className={cardClass}>
                         <div className="flex items-start justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -143,7 +200,7 @@ const DashboardPage = () => {
                     </div>
 
                     {/* Services Card */}
-                    <div className={`group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 hover:shadow-lg ${dashboardAccent.admin.borderHover} transition-all duration-300`}>
+                    <div className={cardClass}>
                         <div className="flex items-start justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -164,7 +221,7 @@ const DashboardPage = () => {
                     </div>
 
                     {/* Bookings Card */}
-                    <div className={`group relative bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6 hover:shadow-lg ${dashboardAccent.admin.borderHover} transition-all duration-300`}>
+                    <div className={cardClass}>
                         <div className="flex items-start justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -178,15 +235,17 @@ const DashboardPage = () => {
                                 <CalendarCheck className="w-6 h-6" weight="duotone" />
                             </div>
                         </div>
-                        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700/50 flex items-center gap-4 text-xs">
-                            <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                                <CheckCircle className="w-3.5 h-3.5" weight="fill" />
-                                {stats?.bookings.completed ?? 0} Done
-                            </span>
-                            <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                                <Clock className="w-3.5 h-3.5" weight="fill" />
-                                {stats?.bookings.pending ?? 0} Pending
-                            </span>
+                        <div className="mt-5 flex flex-wrap gap-2 border-t border-gray-100 pt-4 dark:border-gray-700/50">
+                            {bookingBreakdown.map((item) => {
+                                const Icon = item.icon
+                                return (
+                                    <span key={item.label} className={`${statusPillClass} ${item.color}`}>
+                                        <Icon className="size-3.5 shrink-0" weight="fill" />
+                                        <span>{item.value}</span>
+                                        <span>{item.shortLabel}</span>
+                                    </span>
+                                )
+                            })}
                         </div>
                     </div>
                 </div>
@@ -194,49 +253,31 @@ const DashboardPage = () => {
 
             {/* Quick Overview Section */}
             {!isLoading && !isError && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
                     {/* User Activity Summary */}
                     <div className="bg-white dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700/50 p-6">
                         <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
                             User Activity
                         </h3>
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-500 dark:text-gray-400">Active Users</span>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-24 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                                            style={{
-                                                width: stats?.users.total
-                                                    ? `${(stats.users.active / stats.users.total) * 100}%`
-                                                    : "0%",
-                                            }}
-                                        />
+                            {userBreakdown.map((item) => (
+                                <div key={item.label} className="grid grid-cols-[minmax(8rem,1fr)_minmax(9rem,14rem)] items-center gap-4">
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">{item.label} Users</span>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-500 ${item.bar}`}
+                                                style={{
+                                                    width: getPercentage(item.value, stats?.users.total),
+                                                }}
+                                            />
+                                        </div>
+                                        <span className="min-w-[3ch] text-right text-sm font-medium text-gray-900 dark:text-gray-100">
+                                            {item.value}
+                                        </span>
                                     </div>
-                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 min-w-[3ch] text-right">
-                                        {stats?.users.active ?? 0}
-                                    </span>
                                 </div>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-500 dark:text-gray-400">Banned Users</span>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-24 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-red-500 rounded-full transition-all duration-500"
-                                            style={{
-                                                width: stats?.users.total
-                                                    ? `${(stats.users.banned / stats.users.total) * 100}%`
-                                                    : "0%",
-                                            }}
-                                        />
-                                    </div>
-                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 min-w-[3ch] text-right">
-                                        {stats?.users.banned ?? 0}
-                                    </span>
-                                </div>
-                            </div>
+                            ))}
                         </div>
                     </div>
 
@@ -246,42 +287,24 @@ const DashboardPage = () => {
                             Booking Status
                         </h3>
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-500 dark:text-gray-400">Completed</span>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-24 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                                            style={{
-                                                width: stats?.bookings.total
-                                                    ? `${(stats.bookings.completed / stats.bookings.total) * 100}%`
-                                                    : "0%",
-                                            }}
-                                        />
+                            {bookingBreakdown.map((item) => (
+                                <div key={item.label} className="grid grid-cols-[minmax(8rem,1fr)_minmax(9rem,14rem)] items-center gap-4">
+                                    <span className="text-sm text-gray-500 dark:text-gray-400">{item.label}</span>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+                                            <div
+                                                className={`h-full rounded-full transition-all duration-500 ${item.bar}`}
+                                                style={{
+                                                    width: getPercentage(item.value, stats?.bookings.total),
+                                                }}
+                                            />
+                                        </div>
+                                        <span className="min-w-[3ch] text-right text-sm font-medium text-gray-900 dark:text-gray-100">
+                                            {item.value}
+                                        </span>
                                     </div>
-                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 min-w-[3ch] text-right">
-                                        {stats?.bookings.completed ?? 0}
-                                    </span>
                                 </div>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-500 dark:text-gray-400">Pending</span>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-24 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-amber-500 rounded-full transition-all duration-500"
-                                            style={{
-                                                width: stats?.bookings.total
-                                                    ? `${(stats.bookings.pending / stats.bookings.total) * 100}%`
-                                                    : "0%",
-                                            }}
-                                        />
-                                    </div>
-                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 min-w-[3ch] text-right">
-                                        {stats?.bookings.pending ?? 0}
-                                    </span>
-                                </div>
-                            </div>
+                            ))}
                         </div>
                     </div>
                 </div>
