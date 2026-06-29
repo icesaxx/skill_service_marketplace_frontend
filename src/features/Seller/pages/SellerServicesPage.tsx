@@ -8,11 +8,11 @@ import {
   Plus,
   Trash,
 } from "@phosphor-icons/react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useApiQuery } from "@/services/useApiQuery"
 import { useApiMutation } from "@/services/useApiMutation"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { getStatusTextColor } from "@/lib/colorStyles"
 
@@ -38,6 +38,7 @@ interface SellerService {
 
 const SellerServicesPage = () => {
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null)
+  const [showDeleteModal, setShowDeleteModal] = useState<number | null>(null)
   const queryClient = useQueryClient()
   const { data, isLoading, isError } = useApiQuery<never, SellerService[]>({
     endpoint: "/seller/services",
@@ -66,6 +67,7 @@ const SellerServicesPage = () => {
 
   const deleteMutation = useApiMutation({
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/seller/services"] })
       setMenuOpenId(null)
     },
   })
@@ -82,13 +84,12 @@ const SellerServicesPage = () => {
   }
 
   const handleDelete = (serviceId: number) => {
-    if (confirm("Are you sure you want to delete this service?")) {
-      deleteMutation.mutate({
-        endpoint: `/seller/services/delete`,
-        method: "POST",
-        body: { service_id: serviceId },
-      })
-    }
+    deleteMutation.mutate({
+      endpoint: `/seller/services/delete`,
+      method: "POST",
+      body: { service_id: serviceId },
+    })
+    setShowDeleteModal(null)
   }
 
   if (isError) {
@@ -223,16 +224,16 @@ const SellerServicesPage = () => {
                           {service.is_active ? <EyeSlash size={16} weight="bold" /> : <Eye size={16} weight="bold" />}
                           {service.is_active ? "Deactivate" : "Activate"}
                         </button>
-                        <button
-                          onClick={() => {
-                            handleDelete(service.id)
-                            setMenuOpenId(null)
-                          }}
-                          className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-500/10"
-                        >
-                          <Trash size={16} weight="bold" />
-                          Delete
-                        </button>
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(service.id)
+                      setMenuOpenId(null)
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-500/10"
+                  >
+                    <Trash size={16} weight="bold" />
+                    Delete
+                  </button>
                       </div>
                     </div>
                   )}
@@ -240,6 +241,42 @@ const SellerServicesPage = () => {
               </div>
             </article>
           ))}
+        </div>
+      )}
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20">
+                <Trash className="w-8 h-8 text-red-500" weight="bold" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground">Delete Service?</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Are you sure you want to delete this service? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-3 pt-4">
+                <Button 
+                  variant="outline" 
+                  className="rounded-xl" 
+                  onClick={() => setShowDeleteModal(null)}
+                  disabled={deleteMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="rounded-xl bg-red-600 hover:bg-red-700"
+                  onClick={() => handleDelete(showDeleteModal)}
+                  disabled={deleteMutation.isPending}
+                >
+                  {deleteMutation.isPending ? "Deleting..." : "Delete Service"}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

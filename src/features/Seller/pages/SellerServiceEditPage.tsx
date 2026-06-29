@@ -15,7 +15,6 @@ import { useApiQuery } from "@/services/useApiQuery"
 import { useApiMutation } from "@/services/useApiMutation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useState } from "react"
-import { useQueryClient } from "@tanstack/react-query"
 
 interface Category {
   id: number
@@ -58,8 +57,6 @@ interface ServiceEditData {
 const SellerServiceEditPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const isNew = id === "new"
   const [tagInput, setTagInput] = useState("")
   const [formData, setFormData] = useState({
     title: "",
@@ -72,9 +69,8 @@ const SellerServiceEditPage = () => {
   })
 
   const { data, isLoading, isError } = useApiQuery<never, ServiceEditData>({
-    endpoint: isNew ? "" : `/seller/services/show/${id}`,
-    queryKey: isNew ? [] : [`/seller/services/show/${id}`],
-    enabled: !isNew,
+    endpoint: `/seller/services/show/${id}`,
+    queryKey: [`/seller/services/show/${id}`],
   })
 
   const { data: categoriesData } = useApiQuery<never, CategoriesResponse>({
@@ -86,13 +82,12 @@ const SellerServiceEditPage = () => {
 
   const updateMutation = useApiMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/seller/services"] })
-      navigate("/seller/services")
+      navigate(`/seller/services/${id}`)
     },
   })
 
   useEffect(() => {
-    if (data && !isNew) {
+    if (data) {
       setFormData({
         title: data.title,
         description: data.description ?? "",
@@ -103,7 +98,7 @@ const SellerServiceEditPage = () => {
         image: null,
       })
     }
-  }, [data, isNew])
+  }, [data])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -143,9 +138,7 @@ const SellerServiceEditPage = () => {
     e.preventDefault()
     
     const submitData = new FormData()
-    if (!isNew) {
-      submitData.append("service_id", id || "")
-    }
+    submitData.append("service_id", id || "")
     submitData.append("title", formData.title)
     submitData.append("description", formData.description)
     submitData.append("price", formData.price)
@@ -162,13 +155,13 @@ const SellerServiceEditPage = () => {
     }
 
     updateMutation.mutate({
-      endpoint: `/seller/services`,
+      endpoint: `/seller/services/update`,
       method: "POST",
       body: submitData,
     })
   }
 
-  if (!isNew && isError) {
+  if (isError) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-4">
@@ -190,7 +183,7 @@ const SellerServiceEditPage = () => {
     )
   }
 
-  if (!isNew && isLoading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -215,13 +208,13 @@ const SellerServiceEditPage = () => {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon" className="rounded-xl">
-          <Link to="/seller/services">
+          <Link to={`/seller/services/${id}`}>
             <ArrowLeft size={20} weight="bold" />
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{isNew ? "Create Service" : "Edit Service"}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{isNew ? "Add a new service to your offerings" : "Update your service information"}</p>
+          <h1 className="text-2xl font-bold text-foreground">Edit Service</h1>
+          <p className="text-sm text-muted-foreground mt-1">Update your service information</p>
         </div>
       </div>
 
@@ -410,14 +403,14 @@ const SellerServiceEditPage = () => {
             {/* Submit Buttons */}
         <div className="flex items-center justify-end gap-3">
           <Button asChild variant="outline" type="button" className="rounded-xl">
-            <Link to="/seller/services">Cancel</Link>
+            <Link to={`/seller/services/${id}`}>Cancel</Link>
           </Button>
           <Button
             type="submit"
             className="rounded-xl bg-cyan-600 hover:bg-cyan-700"
             disabled={updateMutation.isPending}
           >
-            {updateMutation.isPending ? "Saving..." : isNew ? "Create Service" : "Save Changes"}
+            {updateMutation.isPending ? "Saving..." : "Save Changes"}
           </Button>
         </div>
           </div>
