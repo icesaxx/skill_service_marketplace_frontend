@@ -1,8 +1,5 @@
-import { useEffect } from "react"
-import { useParams, Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import {
-  ArrowLeft,
-  Briefcase,
   Calendar,
   FileText,
   Image,
@@ -13,9 +10,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { useApiQuery } from "@/services/useApiQuery"
 import { useApiMutation } from "@/services/useApiMutation"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
+import { useState } from "react"
 
 interface Category {
   id: number
@@ -24,42 +20,9 @@ interface Category {
 
 type CategoriesResponse = Category[] | { categories?: Category[] }
 
-interface ServiceEditData {
-  id: number
-  user_id: number
-  category_id?: number | string | null
-  category?: Category | null
-  title: string
-  description: string
-  price: string
-  estimated_days: string
-  tags: string[]
-  image: string | null
-  image_url: string | null
-  is_active: boolean
-  status: string
-  average_rating: number
-  total_reviews: number
-  saved_count: number
-  bookings: {
-    total: number
-    pending: number
-    accepted: number
-    in_progress: number
-    completed: number
-    rejected: number
-    cancelled: number
-  }
-  reviews: any[]
-  created_at: string
-  updated_at: string
-}
-
-const SellerServiceEditPage = () => {
-  const { id } = useParams<{ id: string }>()
+const SellerServiceCreatePage = () => {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const isNew = id === "new"
   const [tagInput, setTagInput] = useState("")
   const [formData, setFormData] = useState({
     title: "",
@@ -71,39 +34,19 @@ const SellerServiceEditPage = () => {
     image: null as File | null,
   })
 
-  const { data, isLoading, isError } = useApiQuery<never, ServiceEditData>({
-    endpoint: isNew ? "" : `/seller/services/show/${id}`,
-    queryKey: isNew ? [] : [`/seller/services/show/${id}`],
-    enabled: !isNew,
-  })
-
-  const { data: categoriesData } = useApiQuery<never, CategoriesResponse>({
+  const { data: categoriesData } = useApiQuery<never, { id: number; name: string }[]>({
     endpoint: "/categories",
     queryKey: ["/categories"],
   })
 
-  const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.categories ?? []
+  const categories = categoriesData ?? []
 
-  const updateMutation = useApiMutation({
+  const createMutation = useApiMutation({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/seller/services"] })
       navigate("/seller/services")
     },
   })
-
-  useEffect(() => {
-    if (data && !isNew) {
-      setFormData({
-        title: data.title,
-        description: data.description ?? "",
-        price: data.price ?? "",
-        estimated_days: data.estimated_days ?? "",
-        category_id: String(data.category_id ?? data.category?.id ?? ""),
-        tags: Array.isArray(data.tags) ? data.tags : [],
-        image: null,
-      })
-    }
-  }, [data, isNew])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -143,9 +86,6 @@ const SellerServiceEditPage = () => {
     e.preventDefault()
     
     const submitData = new FormData()
-    if (!isNew) {
-      submitData.append("service_id", id || "")
-    }
     submitData.append("title", formData.title)
     submitData.append("description", formData.description)
     submitData.append("price", formData.price)
@@ -161,53 +101,11 @@ const SellerServiceEditPage = () => {
       submitData.append("image", formData.image)
     }
 
-    updateMutation.mutate({
+    createMutation.mutate({
       endpoint: `/seller/services`,
       method: "POST",
       body: submitData,
     })
-  }
-
-  if (!isNew && isError) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20">
-            <Briefcase className="w-8 h-8 text-red-500" weight="bold" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-foreground">Failed to load service</h3>
-            <p className="text-sm text-muted-foreground mt-1">Something went wrong while fetching service details.</p>
-          </div>
-          <Button asChild variant="outline" className="rounded-xl">
-            <Link to="/seller/services">
-              <ArrowLeft size={17} weight="bold" />
-              Back to Services
-            </Link>
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  if (!isNew && isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10 rounded-xl" />
-          <div className="space-y-2 flex-1">
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-        </div>
-        <div className="space-y-4">
-          <Skeleton className="h-12 w-full rounded-xl" />
-          <Skeleton className="h-32 w-full rounded-xl" />
-          <Skeleton className="h-12 w-full rounded-xl" />
-          <Skeleton className="h-12 w-full rounded-xl" />
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -216,12 +114,12 @@ const SellerServiceEditPage = () => {
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="icon" className="rounded-xl">
           <Link to="/seller/services">
-            <ArrowLeft size={20} weight="bold" />
+            <FileText size={20} weight="bold" />
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">{isNew ? "Create Service" : "Edit Service"}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{isNew ? "Add a new service to your offerings" : "Update your service information"}</p>
+          <h1 className="text-2xl font-bold text-foreground">Create Service</h1>
+          <p className="text-sm text-muted-foreground mt-1">Add a new service to your offerings</p>
         </div>
       </div>
 
@@ -258,7 +156,7 @@ const SellerServiceEditPage = () => {
                     className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20"
                   >
                     <option value="">Select a category</option>
-                    {categories.map((category) => (
+                    {categories.map((category: { id: number; name: string }) => (
                       <option key={category.id} value={category.id}>
                         {category.name}
                       </option>
@@ -370,11 +268,6 @@ const SellerServiceEditPage = () => {
             <div className="rounded-2xl border border-border bg-card p-6">
               <h2 className="text-lg font-bold text-foreground mb-4">Service Image</h2>
               <div className="space-y-4">
-                {data?.image_url && !formData.image && (
-                  <div className="overflow-hidden rounded-xl border border-border">
-                    <img src={data.image_url} alt={data.title} className="h-48 w-full object-cover" />
-                  </div>
-                )}
                 {formData.image && (
                   <div className="overflow-hidden rounded-xl border border-border">
                     <img
@@ -408,18 +301,18 @@ const SellerServiceEditPage = () => {
             </div>
 
             {/* Submit Buttons */}
-        <div className="flex items-center justify-end gap-3">
-          <Button asChild variant="outline" type="button" className="rounded-xl">
-            <Link to="/seller/services">Cancel</Link>
-          </Button>
-          <Button
-            type="submit"
-            className="rounded-xl bg-cyan-600 hover:bg-cyan-700"
-            disabled={updateMutation.isPending}
-          >
-            {updateMutation.isPending ? "Saving..." : isNew ? "Create Service" : "Save Changes"}
-          </Button>
-        </div>
+            <div className="flex items-center justify-end gap-3">
+              <Button asChild variant="outline" type="button" className="rounded-xl">
+                <Link to="/seller/services">Cancel</Link>
+              </Button>
+              <Button
+                type="submit"
+                className="rounded-xl bg-cyan-600 hover:bg-cyan-700"
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending ? "Creating..." : "Create Service"}
+              </Button>
+            </div>
           </div>
         </div>
       </form>
@@ -427,4 +320,4 @@ const SellerServiceEditPage = () => {
   )
 }
 
-export default SellerServiceEditPage
+export default SellerServiceCreatePage

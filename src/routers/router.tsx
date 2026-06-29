@@ -31,6 +31,7 @@ import SellerAnalyticsPage from "@/features/Seller/pages/SellerAnalyticsPage"
 import SellerProfilePage from "@/features/Seller/pages/SellerProfilePage"
 import SellerServiceDetailPage from "@/features/Seller/pages/SellerServiceDetailPage"
 import SellerServiceEditPage from "@/features/Seller/pages/SellerServiceEditPage"
+import SellerServiceCreatePage from "@/features/Seller/pages/SellerServiceCreatePage"
 
 const router = createBrowserRouter([
   {
@@ -95,6 +96,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/seller/dashboard" replace /> },
       { path: 'dashboard', element: <SellerDashboardPage /> },
       { path: 'services', element: <SellerServicesPage /> },
+      { path: 'services/add', element: <SellerServiceCreatePage /> },
       { path: 'services/:id', element: <SellerServiceDetailPage /> },
       { path: 'services/:id/edit', element: <SellerServiceEditPage /> },
       { path: 'orders', element: <SellerOrdersPage /> },

@@ -40,9 +40,6 @@ const ResetPasswordPage = () => {
       toast.success(response.message || "Password reset successfully. Please login again.")
       navigate("/auth", { replace: true })
     },
-    onError: () => {
-      toast.error("Unable to reset password. Please check your token and try again.")
-    },
   })
 
   const onSubmit = (values: ResetPasswordFormValues) => {

@@ -116,7 +116,7 @@ const SellerServicesPage = () => {
           <p className="text-sm text-muted-foreground mt-1">Manage and monitor your service offerings.</p>
         </div>
         <Button asChild className="rounded-xl bg-cyan-600 hover:bg-cyan-700">
-          <Link to="/seller/services/new">
+          <Link to="/seller/services/add">
             <Plus size={17} weight="bold" />
             Add Service
           </Link>
@@ -150,7 +150,7 @@ const SellerServicesPage = () => {
             Start by creating your first service to attract buyers and grow your business.
           </p>
           <Button asChild className="mt-6 rounded-xl bg-cyan-600 hover:bg-cyan-700">
-            <Link to="/seller/services/new">
+            <Link to="/seller/services/add">
               <Plus size={17} weight="bold" />
               Create Your First Service
             </Link>

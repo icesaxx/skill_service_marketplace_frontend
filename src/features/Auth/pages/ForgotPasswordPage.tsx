@@ -33,9 +33,6 @@ const ForgotPasswordPage = () => {
         state: { email: payload.body?.email },
       })
     },
-    onError: () => {
-      toast.error("Unable to send reset token. Please check your email and try again.")
-    },
   })
 
   const onSubmit = (values: ForgotPasswordFormValues) => {

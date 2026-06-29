@@ -39,11 +39,18 @@ api.interceptors.response.use(
         if (error.response) {
             const status = error.response.status;
             const message = error.response.data?.message || "An error occurred";
-            const errMessageArray = error.response.data?.errors || []; // Ensure it's an array
-            // Convert array to a string (comma-separated)
-            const errDescription = Array.isArray(errMessageArray)
-                ? errMessageArray.join(", ")
-                : errMessageArray;
+            const errData = error.response.data?.errors;
+            // Handle errors as object { field: [messages] } or array
+            let errDescription: string;
+            if (Array.isArray(errData)) {
+                errDescription = errData.join(", ");
+            } else if (typeof errData === "object" && errData !== null) {
+                errDescription = Object.values(errData)
+                    .flat()
+                    .join(", ");
+            } else {
+                errDescription = message;
+            }
 
             switch (status) {
                 case 400:
