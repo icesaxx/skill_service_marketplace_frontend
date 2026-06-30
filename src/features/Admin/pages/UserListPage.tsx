@@ -18,6 +18,7 @@ import { toast } from "sonner"
 import { useQueryClient } from "@tanstack/react-query"
 import EditUserModal from "@/features/Admin/components/EditUserModal"
 import ViewUserModal from "@/features/Admin/components/ViewUserModal"
+import DeleteUserModal from "@/features/Admin/components/DeleteUserModal"
 
 type User = {
   id: number
@@ -99,6 +100,8 @@ const UserListPage = () => {
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [viewUserId, setViewUserId] = useState<number | null>(null)
   const [viewModalOpen, setViewModalOpen] = useState(false)
+  const [deleteUserData, setDeleteUserData] = useState<User | null>(null)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
 
   const deleteUser = useApiMutation<DeleteUserPayload, NoResponse>({
     onSuccess: () => {
@@ -145,12 +148,28 @@ const UserListPage = () => {
     })
   }
 
-  const handleDelete = (user: User) => {
-    deleteUser.mutate({
-      endpoint: "/admin/users/delete",
-      method: "POST",
-      body: { user_id: user.id },
-    })
+  const handleDeleteClick = (user: User) => {
+    setDeleteUserData(user)
+    setDeleteModalOpen(true)
+  }
+
+  const handleDeleteConfirm = () => {
+    if (deleteUserData) {
+      deleteUser.mutate({
+        endpoint: "/admin/users/delete",
+        method: "POST",
+        body: { user_id: deleteUserData.id },
+      })
+      setDeleteModalOpen(false)
+      setDeleteUserData(null)
+    }
+  }
+
+  const handleDeleteClose = () => {
+    if (!deleteUser.isPending) {
+      setDeleteModalOpen(false)
+      setDeleteUserData(null)
+    }
   }
 
   const columns = useMemo(
@@ -262,7 +281,7 @@ const UserListPage = () => {
                 <PencilSimple className="size-4" weight="bold" />
               </button>
               <button
-                onClick={() => handleDelete(user)}
+                onClick={() => handleDeleteClick(user)}
                 disabled={isDeleting}
                 className="inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-rose-500/10 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40"
                 title="Delete user"
@@ -501,6 +520,15 @@ const UserListPage = () => {
           setViewModalOpen(false)
           setViewUserId(null)
         }}
+      />
+
+      {/* Delete User Modal */}
+      <DeleteUserModal
+        user={deleteUserData}
+        open={deleteModalOpen}
+        onClose={handleDeleteClose}
+        onConfirm={handleDeleteConfirm}
+        isDeleting={deleteUser.isPending}
       />
     </div>
   )
